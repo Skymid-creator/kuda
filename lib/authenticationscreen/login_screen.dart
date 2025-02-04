@@ -10,7 +10,25 @@ class loginScreen extends StatefulWidget {
 class _loginScreenState extends State<loginScreen> {
   @override
   Widget build(BuildContext context) {
-    return const Placeholder();
+    return Scaffold(
+      body: SingleChildScrollView(
+        child: Center(
+          child: Column(
+            children: [
+
+              const SizedBox(
+                height: 300,
+              ),
+
+              Image.asset(
+                "images/logo.png",
+                width: 300,
+              ),
+            ],
+          ),
+        ),
+      )
+    );
   }
 }
 
