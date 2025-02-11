@@ -17,12 +17,19 @@ class _loginScreenState extends State<loginScreen> {
             children: [
 
               const SizedBox(
-                height: 300,
+                height: 150,
               ),
 
               Image.asset(
                 "images/logo.png",
                 width: 300,
+              ),
+              const Text(
+                "Connecting souls",
+                    style: TextStyle(
+                      fontFamily: 'LoveDays',
+                    fontSize: 30,
+              ),
               ),
             ],
           ),
