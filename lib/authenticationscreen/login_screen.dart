@@ -12,6 +12,8 @@ class _loginScreenState extends State<loginScreen> {
 
   TextEditingController emailTextEditingController = TextEditingController();
   TextEditingController passwordTextEditingController = TextEditingController();
+  bool showProgressBar = false;
+
 
 
   @override
@@ -97,6 +99,8 @@ class _loginScreenState extends State<loginScreen> {
                 height: 16,
               ),
 
+
+              // create new account button
               Container(
                 width: MediaQuery.of(context).size.width - 40,
                 height: 55,
@@ -122,6 +126,17 @@ class _loginScreenState extends State<loginScreen> {
                     )
                 ),
               ),
+
+              const SizedBox(
+                height: 16,
+              ),
+
+              showProgressBar == true
+                  ? const CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.pink),
+              ) //if
+                  : Container(),  //else
+
 
             ],
           ),
