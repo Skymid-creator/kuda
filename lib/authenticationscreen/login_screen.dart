@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:kuda/authenticationscreen/registration_screen.dart';
 import 'package:kuda/widgets/custom_text_field_widget.dart';
-
+import 'package:get/get.dart';
 class loginScreen extends StatefulWidget {
   const loginScreen({super.key});
 
@@ -112,7 +113,7 @@ class _loginScreenState extends State<loginScreen> {
                 ),
                 child: InkWell(
                     onTap: (){
-
+                      Get.to(() => RegistrationScreen()); // Navigate to RegistrationScreen
                     },
                     child: const Center(
                         child: Text(
