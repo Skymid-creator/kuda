@@ -10,6 +10,11 @@ class RegistrationController extends GetxController {
   var preferences = {}.obs; // Preferences stored as a Map
   var bookGenres = ''.obs;
   var favoriteMusic = ''.obs;
+  var artPreferences = ''.obs;
+  var moviePreferences = ''.obs;
+  var sportPreferences = ''.obs;
+  var travelPreferences = ''.obs;
+  var foodPreferences = ''.obs;
 
   void updateBasicInfo({
     required String name,
@@ -27,9 +32,23 @@ class RegistrationController extends GetxController {
     this.gender.value = gender;
   }
 
-  void updatePreferences(Map<String, bool> preferences, String bookGenres, String favoriteMusic) {
+  void updatePreferences(
+      Map<String, bool> preferences,
+      String bookGenres,
+      String favoriteMusic,
+      [String artPrefs = '',
+        String moviePrefs = '',
+        String sportPrefs = '',
+        String travelPrefs = '',
+        String foodPrefs = '']
+      ) {
     this.preferences.value = preferences;
     this.bookGenres.value = bookGenres;
     this.favoriteMusic.value = favoriteMusic;
+    this.artPreferences.value = artPrefs;
+    this.moviePreferences.value = moviePrefs;
+    this.sportPreferences.value = sportPrefs;
+    this.travelPreferences.value = travelPrefs;
+    this.foodPreferences.value = foodPrefs;
   }
 }
