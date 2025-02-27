@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:kuda/authenticationscreen/registration_screen.dart';
 import 'package:get/get.dart';
 import '../widgets/custom_text_field_widget.dart'; // Import CustomTextFieldWidget
-
+import 'gender_selection_screen.dart';
 class loginScreen extends StatefulWidget {
   const loginScreen({super.key});
 
@@ -125,6 +125,24 @@ class _loginScreenState extends State<loginScreen> {
                 ),
                 child: const Text(
                   "Create new account",
+                  style: TextStyle(fontSize: 18),
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              ElevatedButton(
+                onPressed: () {
+                  Get.to(() => GenderSelectionScreen());
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.greenAccent,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 15),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text(
+                  "Im the Developer",
                   style: TextStyle(fontSize: 18),
                 ),
               ),

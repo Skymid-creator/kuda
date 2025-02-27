@@ -1,7 +1,8 @@
+// File: lib/authenticationscreen/registration_controller.dart
 import 'package:get/get.dart';
 
 class RegistrationController extends GetxController {
-  // Observable variables for registration data
+  // Existing Observables (name, email, password, city, gender, preferences, etc.)
   var name = ''.obs;
   var email = ''.obs;
   var password = ''.obs;
@@ -16,6 +17,16 @@ class RegistrationController extends GetxController {
   var travelPreferences = ''.obs;
   var foodPreferences = ''.obs;
 
+  // NEW: Personal Details
+  var height = ''.obs;
+  var personalityAnswers = <String, String>{}.obs; // Question ID -> Answer
+
+  // NEW: Relationship Preferences
+  var relationshipType = ''.obs;
+  var partnerHeightPreference = ''.obs;
+  var partnerPersonalityTraits = <String>[].obs; // List of desired traits
+
+  // Existing update methods
   void updateBasicInfo({
     required String name,
     required String email,
@@ -50,5 +61,41 @@ class RegistrationController extends GetxController {
     this.sportPreferences.value = sportPrefs;
     this.travelPreferences.value = travelPrefs;
     this.foodPreferences.value = foodPrefs;
+  }
+
+  // NEW: Update Personal Details
+  void updatePersonalDetails(String height, Map<String, String> answers) {
+    this.height.value = height;
+    this.personalityAnswers.value = answers;
+  }
+
+  // NEW: Update Relationship Preferences
+  void updateRelationshipPreferences(
+      String type, String heightPref, List<String> traits) {
+    this.relationshipType.value = type;
+    this.partnerHeightPreference.value = heightPref;
+    this.partnerPersonalityTraits.value = traits;
+  }
+
+  // Clear all data (optional, for logout or clearing registration)
+  void clearAllData() {
+    name.value = '';
+    email.value = '';
+    password.value = '';
+    city.value = '';
+    gender.value = '';
+    preferences.clear();
+    bookGenres.value = '';
+    favoriteMusic.value = '';
+    artPreferences.value = '';
+    moviePreferences.value = '';
+    sportPreferences.value = '';
+    travelPreferences.value = '';
+    foodPreferences.value = '';
+    height.value = '';
+    personalityAnswers.clear();
+    relationshipType.value = '';
+    partnerHeightPreference.value = '';
+    partnerPersonalityTraits.clear();
   }
 }

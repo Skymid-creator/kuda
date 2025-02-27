@@ -1,9 +1,9 @@
-// File: lib/authenticationscreen/preferences_screen.dart
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart'; // Import for RenderObject
 import 'package:get/get.dart';
 import 'registration_controller.dart';
-import '../widgets/custom_text_field_widget.dart';
-import '../dashboard/dashboard_screen.dart';
+import 'personal_details_screen.dart';
+import 'package:flutter/scheduler.dart'; // Import SchedulerBinding
 
 class PreferencesScreen extends StatefulWidget {
   const PreferencesScreen({Key? key}) : super(key: key);
@@ -13,19 +13,13 @@ class PreferencesScreen extends StatefulWidget {
 }
 
 class _PreferencesScreenState extends State<PreferencesScreen> {
-  final RegistrationController registrationController = Get.find<RegistrationController>();
+  final RegistrationController registrationController =
+  Get.find<RegistrationController>();
   final ScrollController _scrollController = ScrollController();
 
-  // Text controllers for specific preferences
-  final TextEditingController bookGenresController = TextEditingController();
-  final TextEditingController musicController = TextEditingController();
-  final TextEditingController artController = TextEditingController();
-  final TextEditingController moviesController = TextEditingController();
-  final TextEditingController sportsController = TextEditingController();
-  final TextEditingController travelController = TextEditingController();
-  final TextEditingController foodController = TextEditingController();
+  // Use a single controller and dynamically assign it.
+  final TextEditingController detailsController = TextEditingController();
 
-  // Map to store user preferences
   final Map<String, bool> preferences = {
     'Books': false,
     'Music': false,
@@ -45,90 +39,106 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
     'Animals': false,
   };
 
-  // Map to track if the specific preference fields are expanded
-  final Map<String, bool> expandedPreferences = {};
 
   @override
   void initState() {
     super.initState();
-    // Initialize all preferences as not expanded
-    for (String key in preferences.keys) {
-      expandedPreferences[key] = false;
-    }
+    // _scrollController.addListener(_scrollListener); // REMOVED
+  }
+
+
+  @override
+  void dispose() {
+    // _scrollController.removeListener(_scrollListener); // REMOVED
+    _scrollController.dispose();
+    detailsController.dispose();
+    super.dispose();
   }
 
   void _togglePreference(String preference) {
     setState(() {
       preferences[preference] = !preferences[preference]!;
-
-      // If preference is deselected, also collapse its details
-      if (!preferences[preference]!) {
-        expandedPreferences[preference] = false;
-      }
     });
   }
 
   void _toggleExpand(String preference) {
-    // Only toggle if the preference is selected
     if (preferences[preference]!) {
       setState(() {
-        expandedPreferences[preference] = !expandedPreferences[preference]!;
+        final isCurrentlyExpanded = preferences[preference] ?? false;
+        preferences[preference] = !isCurrentlyExpanded;
+
+        if (!isCurrentlyExpanded) {
+          // Use addPostFrameCallback to ensure layout is complete.
+          SchedulerBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return; // Check if still mounted
+
+            final index = preferences.keys.toList().indexOf(preference);
+            if (index != -1) {
+              //Calculate the height of the header widgets
+              double headerHeight = 64.0;
+              final estimatedPosition = (index * 60.0) + headerHeight;
+
+              // Ensure the scroll position is within bounds before animating
+              double maxScrollExtent = _scrollController.position.maxScrollExtent;
+              double targetPosition = estimatedPosition.clamp(0.0, maxScrollExtent);
+
+              _scrollController.animateTo(
+                targetPosition,
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+              );
+            }
+          });
+        }
       });
-
-      // Scroll to the expanded item after a short delay to allow animation
-      if (expandedPreferences[preference]!) {
-        Future.delayed(const Duration(milliseconds: 200), () {
-          _scrollToCurrentItem(preference);
-        });
-      }
-    }
-  }
-
-  void _scrollToCurrentItem(String preference) {
-    // Calculate approximate position of the item
-    final index = preferences.keys.toList().indexOf(preference);
-    if (index != -1) {
-      final estimatedPosition = index * 60.0; // Approximate height per item
-      _scrollController.animateTo(
-        estimatedPosition,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
     }
   }
 
   void _completeRegistration() {
-    // Ensure at least one preference is selected
     if (!preferences.values.contains(true)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Please select at least one interest"))
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text("Please select at least one interest")));
       return;
     }
 
-    // Gather specific preferences
-    String bookGenres = preferences['Books']! ? bookGenresController.text : '';
-    String favoriteMusic = preferences['Music']! ? musicController.text : '';
-    String artPrefs = preferences['Art']! ? artController.text : '';
-    String moviePrefs = preferences['Movies & TV']! ? moviesController.text : '';
-    String sportPrefs = preferences['Sports']! ? sportsController.text : '';
-    String travelPrefs = preferences['Travel']! ? travelController.text : '';
-    String foodPrefs = preferences['Food']! ? foodController.text : '';
+    // Pass the single controller's text to a helper function.
+    _updateRegistrationController();
+    Get.to(() => const PersonalDetailsScreen());
+  }
 
-    // Save preferences to controller
+  void _updateRegistrationController() {
+    // Use a Map to match preferences keys to field keys
+    Map<String, String> preferenceFields = {
+      'Books': 'bookGenres',
+      'Music': 'favoriteMusic',
+      'Art': 'artPrefs',
+      'Movies & TV': 'moviePrefs',
+      'Sports': 'sportPrefs',
+      'Travel': 'travelPrefs',
+      'Food': 'foodPrefs',
+    };
+
+    // Create a map to store updated values for each selected preference
+    Map<String, String> updatedValues = {};
+
+    // Populate the updatedValues map based on selected preferences
+    preferences.forEach((pref, isSelected) {
+      if (isSelected && preferenceFields.containsKey(pref)) {
+        updatedValues[preferenceFields[pref]!] = detailsController.text;
+      }
+    });
+
+    // Update all at once in the registration controller
     registrationController.updatePreferences(
         preferences,
-        bookGenres,
-        favoriteMusic,
-        artPrefs,
-        moviePrefs,
-        sportPrefs,
-        travelPrefs,
-        foodPrefs
+        updatedValues['bookGenres'] ?? '',        // Provide default empty strings
+        updatedValues['favoriteMusic'] ?? '',
+        updatedValues['artPrefs'] ?? '',
+        updatedValues['moviePrefs'] ?? '',
+        updatedValues['sportPrefs'] ?? '',
+        updatedValues['travelPrefs'] ?? '',
+        updatedValues['foodPrefs'] ?? ''
     );
-
-    // Navigate to dashboard screen
-    Get.offAll(() => const DashboardScreen());
   }
 
   @override
@@ -144,7 +154,8 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
           IconButton(
             icon: Icon(Get.isDarkMode ? Icons.light_mode : Icons.dark_mode),
             onPressed: () {
-              Get.changeThemeMode(Get.isDarkMode ? ThemeMode.light : ThemeMode.dark);
+              Get.changeThemeMode(
+                  Get.isDarkMode ? ThemeMode.light : ThemeMode.dark);
             },
           ),
         ],
@@ -152,108 +163,110 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
       backgroundColor: currentTheme.scaffoldBackgroundColor,
       body: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              children: [
-                const Text(
-                  "What do you like?",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontFamily: 'LoveDays',
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blue,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                const Text(
-                  "Select your interests to find people who share your passions",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Scrollable list of preferences
           Expanded(
             child: ListView.builder(
               controller: _scrollController,
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              itemCount: preferences.length,
+              itemCount: preferences.length + 2, // +2 for header widgets
               itemBuilder: (context, index) {
-                final preference = preferences.keys.elementAt(index);
-                final isSelected = preferences[preference]!;
-                final isExpanded = expandedPreferences[preference]!;
-
-                return Column(
-                  children: [
-                    // Preference item
-                    Container(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? currentTheme.colorScheme.primary.withOpacity(0.1)
-                            : currentTheme.colorScheme.surface,
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: ListTile(
-                        contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8
-                        ),
-                        title: Text(
-                          preference,
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: isSelected
-                                ? currentTheme.colorScheme.primary
-                                : currentTheme.colorScheme.onSurface,
-                          ),
-                        ),
-                        leading: Checkbox(
-                          value: isSelected,
-                          onChanged: (_) => _togglePreference(preference),
-                          activeColor: currentTheme.colorScheme.primary,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                        ),
-                        trailing: isSelected
-                            ? IconButton(
-                          icon: Icon(
-                            isExpanded
-                                ? Icons.keyboard_arrow_up
-                                : Icons.keyboard_arrow_down,
-                            color: currentTheme.colorScheme.primary,
-                          ),
-                          onPressed: () => _toggleExpand(preference),
-                        )
-                            : null,
+                // Header Text 1
+                if (index == 0) {
+                  return const Padding(
+                    padding: EdgeInsets.only(top: 20),
+                    child: Text(
+                      "What do you like?",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontFamily: 'LoveDays',
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blue,
                       ),
                     ),
+                  );
+                }
 
-                    // Expandable detail section for specific preferences
-                    if (isSelected && isExpanded)
-                      _buildExpandableContent(preference, currentTheme),
-                  ],
-                );
+                // Header Text 2
+                if (index == 1) {
+                  return const Padding(
+                    padding: EdgeInsets.only(bottom: 20),
+                    child: Text(
+                      "Select your interests to find people who share your passions",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  );
+                }
+
+                final preferenceIndex = index - 2;
+                final preference = preferences.keys.elementAt(preferenceIndex);
+                final isSelected = preferences[preference]!;
+                final itemKey = ValueKey(preference);
+
+                return
+                  Column( // Removed LayoutBuilder
+                    key: itemKey,
+                    children: [
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? currentTheme.colorScheme.primary
+                              .withOpacity(0.1)
+                              : currentTheme.colorScheme.surface,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.05),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 8),
+                          title: Text(
+                            preference,
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: isSelected
+                                  ? currentTheme.colorScheme.primary
+                                  : currentTheme.colorScheme.onSurface,
+                            ),
+                          ),
+                          leading: Checkbox(
+                            value: isSelected,
+                            onChanged: (_) => _togglePreference(preference),
+                            activeColor: currentTheme.colorScheme.primary,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                          trailing: isSelected
+                              ? IconButton(
+                            icon: Icon(
+                              preferences[preference]!
+                                  ? Icons.keyboard_arrow_up
+                                  : Icons.keyboard_arrow_down,
+                              color: currentTheme.colorScheme.primary,
+                            ),
+                            onPressed: () => _toggleExpand(preference),
+                          )
+                              : null,
+                        ),
+                      ),
+                      if (isSelected && preferences[preference]!)
+                        _buildExpandableContent(preference, currentTheme),
+                    ],
+                  );
+
               },
             ),
           ),
-
-          // Finish button
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
@@ -272,11 +285,12 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                 backgroundColor: currentTheme.colorScheme.primary,
                 foregroundColor: currentTheme.colorScheme.onPrimary,
                 minimumSize: const Size(double.infinity, 56),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
                 elevation: 5,
               ),
               child: const Text(
-                "Finish Registration",
+                "Continue",
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ),
@@ -286,59 +300,49 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
     );
   }
 
-  // Custom method to build the expandable content for each preference
   Widget _buildExpandableContent(String preference, ThemeData theme) {
-    TextEditingController? controller;
     String hintText = '';
     String labelText = '';
     IconData iconData = Icons.favorite;
 
-    // Assign the appropriate controller and text based on the preference
     switch (preference) {
       case 'Books':
-        controller = bookGenresController;
         hintText = 'Fiction, Fantasy, Biography...';
         labelText = 'Favorite book genres';
         iconData = Icons.book;
         break;
       case 'Music':
-        controller = musicController;
         hintText = 'Rock, Jazz, Classical...';
         labelText = 'Music genres you enjoy';
         iconData = Icons.music_note;
         break;
       case 'Art':
-        controller = artController;
         hintText = 'Modern art, Renaissance...';
         labelText = 'Art styles you appreciate';
         iconData = Icons.palette;
         break;
       case 'Movies & TV':
-        controller = moviesController;
         hintText = 'Sci-fi, Drama, Comedy...';
         labelText = 'Favorite movie/TV genres';
         iconData = Icons.movie;
         break;
       case 'Sports':
-        controller = sportsController;
         hintText = 'Basketball, Soccer, Yoga...';
         labelText = 'Sports or activities you enjoy';
         iconData = Icons.sports_basketball;
         break;
       case 'Travel':
-        controller = travelController;
         hintText = 'Beach, Mountains, Cultural...';
         labelText = 'Travel preferences';
         iconData = Icons.flight;
         break;
       case 'Food':
-        controller = foodController;
         hintText = 'Italian, Vegan, Street food...';
         labelText = 'Cuisine preferences';
         iconData = Icons.restaurant;
         break;
       default:
-        return Container(); // Empty container for preferences without specific details
+        return Container(); // No additional content
     }
 
     return AnimatedContainer(
@@ -356,9 +360,8 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
           ),
         ],
       ),
-      // Use a standard TextField instead of CustomTextFieldWidget
       child: TextField(
-        controller: controller,
+        controller: detailsController, // Single controller
         maxLines: 3,
         decoration: InputDecoration(
           labelText: labelText,
@@ -367,33 +370,9 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
           labelStyle: const TextStyle(
             fontSize: 18,
           ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(6),
-            borderSide: const BorderSide(
-              color: Colors.grey,
-            ),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(6),
-            borderSide: const BorderSide(
-              color: Colors.grey,
-            ),
-          ),
+          border: InputBorder.none,
         ),
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    bookGenresController.dispose();
-    musicController.dispose();
-    artController.dispose();
-    moviesController.dispose();
-    sportsController.dispose();
-    travelController.dispose();
-    foodController.dispose();
-    super.dispose();
   }
 }

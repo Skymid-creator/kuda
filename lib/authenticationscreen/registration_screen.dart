@@ -314,14 +314,16 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                               : const Icon(Icons.location_on_outlined, size: 20),
+
                           label: Text(
                             isFetchingLocation ? "Locating..." : "Use My Location",
+                            textAlign: TextAlign.center,
                             style: const TextStyle(fontSize: 14),
                           ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: currentTheme.colorScheme.primary,
                             foregroundColor: currentTheme.colorScheme.onPrimary,
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                           ),
                         ),
